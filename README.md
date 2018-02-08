@@ -16,6 +16,6 @@ Running as the superuser is prohibited. running the command shown at the end of 
 "pkg_ping -vs1.5 -ivuv"
 
 
-It will shortent the timeout period to the currently fastest download time if no -v are used.
+It will shorten the timeout period to the currently fastest download time if no -v are used.
 
 clang pkg_ping.c -o pkg_ping
