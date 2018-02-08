@@ -136,7 +136,7 @@ main(int argc, char *argv[])
 	if (getuid() == 0)
 		errx(EXIT_FAILURE, "Don't run as root!");
 
-	if (pledge("stdio wpath cpath proc exec id getpw", NULL) == -1)
+	if (pledge("stdio proc exec", NULL) == -1)
 		err(EXIT_FAILURE, "pledge");
 	pid_t ftp_pid, sed_pid;
 	int ftp_to_sed[2];
@@ -627,7 +627,7 @@ main(int argc, char *argv[])
 		printf("\n\n");
 		for (c = array_length - 1; c >= 0; --c) {
 			array[c]->ftp_file[strlen(array[c]->ftp_file) - tag_len] = '\0';
-			printf("%d : %s:\n\t%s : ", c + 1, array[c]->label,
+			printf("%d : %s:\n\techo \"%s\" > /etc/installurl : ", c + 1, array[c]->label,
 			    array[c]->ftp_file);
 
 			if (array[c]->diff < s)
