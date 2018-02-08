@@ -11,6 +11,8 @@ export encryption compliance if you are searching from outside of the USA with -
 seconds for downloading a small SHA256 file with "-s 1.5" and it will print the options with -h. these options can be mixed and 
 matched as well: "pkg_ping -vs2 -vuv"
 
+clang pkg_ping.c -o pkg_ping
+
 
 New in version 2:
 
