@@ -10,3 +10,13 @@ It uses several commandline options including 3 levels of verbosity -v, -vv, -vv
 export encryption compliance if you are searching from outside of the USA with -u. It will accept floating-point time-out like 1.5
 seconds for downloading a small SHA256 file with "-s 1.5" and it will print the options with -h. these options can be mixed and 
 matched as well: "pkg_ping -vs2 -vuv"
+
+
+New in version 2:
+
+the "-i" option will also choose http and ftp mirrors, where the ftp mirrors are turned into http mirror listings and duplicates
+are pruned between them the http are faster than the https mirror selections.
+
+Running as the superuser is prohibited. running the command shown at the end of program execution as root will install the mirror.
+
+"pkg_ping -vs1.5 -ivuv"
