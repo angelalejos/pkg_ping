@@ -1,5 +1,4 @@
-# pkg_ping
-determines and prints the fastest OpenBSD mirror for your version and architecture into the /etc/installurl file.
+It determines and prints the fastest OpenBSD mirror for your version and architecture into the /etc/installurl file.
 compiler optimization for speed is not necessary as the calls using ftp will take up the vast majority of the run-time.
 privilege separation and pledge are used. This program works on OpenBSD 6.1 and the current 6.2 version as of this writing.
 
@@ -13,7 +12,7 @@ are pruned. between them the http/ftp mirrors are faster than the https mirror s
 
 Running as the superuser is prohibited. running the command shown at the end of program execution as root will install the mirror.
 
-"pkg_ping -vs1.5 -ivuv"
+$ pkg_ping -vs1.5 -ivuv
 
 
 It will shorten the timeout period to the currently fastest download time if no -v are used.
