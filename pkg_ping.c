@@ -62,7 +62,7 @@ struct mirror_st {
 };
 
 static int
-ftp_cmp(const void *a, const void *b)
+diff_cmp(const void *a, const void *b)
 {
 	struct mirror_st **one;
 	struct mirror_st **two;
@@ -75,6 +75,18 @@ ftp_cmp(const void *a, const void *b)
 	if ((*one)->diff > (*two)->diff)
 		return 1;
 	return 0;
+}
+
+static int
+ftp_cmp(const void *a, const void *b)
+{
+	struct mirror_st **one;
+	struct mirror_st **two;
+
+	one = (struct mirror_st **) a;
+	two = (struct mirror_st **) b;
+
+	return strcmp((*one)->ftp_file, (*two)->ftp_file);
 }
 
 static int
@@ -228,11 +240,6 @@ main(int argc, char *argv[])
 	//~argv += optind;
 
 
-
-	if (pledge("stdio proc exec", NULL) == -1)
-		err(EXIT_FAILURE, "pledge");
-
-
 	struct timespec timeout0 = {20, 0};
 	struct timespec timeout;
 
@@ -261,8 +268,10 @@ main(int argc, char *argv[])
 		execl("/usr/bin/ftp", "ftp", "-Vo", "-",
 		    "https://www.openbsd.org/ftp.html", NULL);
 
+		n = errno;
 		if (pledge("stdio", NULL) == -1)
 			err(EXIT_FAILURE, "pledge");
+		errno = n;
 
 		err(EXIT_FAILURE, "ftp execl() failed.");
 	}
@@ -280,7 +289,7 @@ main(int argc, char *argv[])
 
 	sed_pid = fork();
 	if (sed_pid == (pid_t) 0) {
-
+			
 		close(sed_to_parent[STDIN_FILENO]);
 
 		if (dup2(ftp_to_sed[STDIN_FILENO], STDIN_FILENO) == -1) {
@@ -295,13 +304,21 @@ main(int argc, char *argv[])
 			errno = n;
 			err(EXIT_FAILURE, "dup2");
 		}
+
+		if (pledge("stdio exec", NULL) == -1)
+			err(EXIT_FAILURE, "pledge");
+			
 		execl("/usr/bin/sed", "sed", "-n",
 		    "-e", "s:</a>$::",
 		    "-e", "s:\t<strong>\\([^<]*\\)<.*:\\1:p",
 		    "-e", "s:^\\(\t[hfr].*\\):\\1:p", NULL);
 
-		if (pledge("stdio proc", NULL) == -1)
+		n = errno;
+		if (pledge("stdio", NULL) == -1)
 			err(EXIT_FAILURE, "pledge");
+		errno = n;
+
+		err(EXIT_FAILURE, "sed execl() failed.");
 	}
 	if (sed_pid == -1) {
 		n = errno;
@@ -343,7 +360,7 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE,
 		    "input = fdopen (sed_to_parent[0], \"r\") failed.");
 	}
-	/* if pos exceeds 299, it is a bad file and will cause an error */
+	/* if pos exceeds 299, it is a bad file and will gracefully fail */
 	char *line;
 	line = (char *) malloc(300);
 	if (line == NULL)
@@ -479,9 +496,9 @@ main(int argc, char *argv[])
 
 
 
-	qsort(array, array_length, sizeof(struct mirror_st *), label_cmp);
 
 	if (insecure) {
+		qsort(array, array_length, sizeof(struct mirror_st *), ftp_cmp);
 		for (c = 1; c < array_length; ++c) {
 			if (!strcmp(array[c - 1]->ftp_file, array[c]->ftp_file)) {
 				free(array[c - 1]->label);
@@ -493,6 +510,7 @@ main(int argc, char *argv[])
 			}
 		}
 	}
+	qsort(array, array_length, sizeof(struct mirror_st *), label_cmp);
 	double S = s;
 
 	for (c = 0; c < array_length; ++c) {
@@ -621,7 +639,7 @@ main(int argc, char *argv[])
 		printf("\b \b");
 		fflush(stdout);
 	}
-	qsort(array, array_length, sizeof(struct mirror_st *), ftp_cmp);
+	qsort(array, array_length, sizeof(struct mirror_st *), diff_cmp);
 
 	if (verbose == 3) {
 		printf("\n\n");
