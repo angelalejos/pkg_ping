@@ -131,7 +131,7 @@ get_time_diff(struct timeval a, struct timeval b)
 static void
 manpage(char *a)
 {
-	printf("%s [-v (recognizes up to 3 levels of verbosity)]\n", a);
+	printf("%s [-v (recognizes up to 2 levels of verbosity)]\n", a);
 
 	printf("[-u (no USA mirrors...to comply ");
 	printf("with USA encryption export laws)]\n");
@@ -145,8 +145,8 @@ manpage(char *a)
 int
 main(int argc, char *argv[])
 {
-	if (getuid() == 0)
-		errx(EXIT_FAILURE, "Don't run as root!");
+//	if (getuid() == 0)
+//		errx(EXIT_FAILURE, "Don't run as root!");
 
 	if (pledge("stdio proc exec", NULL) == -1)
 		err(EXIT_FAILURE, "pledge");
@@ -218,8 +218,8 @@ main(int argc, char *argv[])
 				errx(EXIT_FAILURE, "-s should be > 0.01");
 			break;
 		case 'v':
-			if (++verbose > 3)
-				verbose = 3;
+			if (++verbose > 2)
+				verbose = 2;
 			break;
 		case 'i':
 			insecure = 1;
@@ -229,7 +229,7 @@ main(int argc, char *argv[])
 			break;
 		case 'h':
 			manpage(argv[0]);
-			return 1;
+			return 0;
 		default:
 			manpage(argv[0]);
 			return 1;
@@ -514,7 +514,7 @@ main(int argc, char *argv[])
 	double S = s;
 
 	for (c = 0; c < array_length; ++c) {
-		if (verbose >= 2) {
+		if (verbose >= 1) {
 			if (array_length >= 1000) {
 				printf("\n%4d : %s  :  %s\n", array_length - c,
 				    array[c]->label, array[c]->ftp_file);
@@ -556,7 +556,7 @@ main(int argc, char *argv[])
 			read(block_pipe[STDIN_FILENO], &n, sizeof(int));
 			close(block_pipe[STDIN_FILENO]);
 
-			if (verbose >= 2) {
+			if (verbose >= 1) {
 				execl("/usr/bin/ftp", "ftp", "-Vmo",
 				    "/dev/null", array[c]->ftp_file, NULL);
 			} else {
@@ -567,8 +567,10 @@ main(int argc, char *argv[])
 				    "/dev/null", array[c]->ftp_file, NULL);
 			}
 
+			n = errno;
 			if (pledge("stdio", NULL) == -1)
 				err(EXIT_FAILURE, "pledge");
+			errno = n;
 
 			err(EXIT_FAILURE, "ftp execl() failed.");
 		}
@@ -581,7 +583,9 @@ main(int argc, char *argv[])
 		EV_SET(&ke, ftp_pid, EVFILT_PROC, EV_ADD | EV_ONESHOT,
 		    NOTE_EXIT, 0, NULL);
 		if (kevent(kq, &ke, 1, NULL, 0, NULL) == -1) {
+			n = errno;
 			kill(ftp_pid, SIGKILL);
+			errno = n;
 			err(EXIT_FAILURE, "kevent register fail.");
 		}
 		gettimeofday(&tv_start, NULL);
@@ -602,7 +606,7 @@ main(int argc, char *argv[])
 				err(EXIT_FAILURE, "kevent");
 			}
 			if (i == 0) {
-				if (verbose >= 2)
+				if (verbose >= 1)
 					printf("\nTimeout\n");
 				kill(ftp_pid, SIGKILL);
 				array[c]->diff = s;
@@ -613,7 +617,7 @@ main(int argc, char *argv[])
 		if (ke.data == 0) {
 			gettimeofday(&tv_end, NULL);
 			array[c]->diff = get_time_diff(tv_start, tv_end);
-			if (verbose >= 2) {
+			if (verbose >= 1) {
 				if (array[c]->diff > s)
 					array[c]->diff = s;
 				else
@@ -627,7 +631,7 @@ main(int argc, char *argv[])
 			}
 		} else if (array[c]->diff == 0) {
 			array[c]->diff = s + 1;
-			if (verbose >= 2)
+			if (verbose >= 1)
 				printf("Download Error\n");
 		}
 		waitpid(ftp_pid, NULL, 0);
@@ -635,13 +639,13 @@ main(int argc, char *argv[])
 	if (pledge("stdio", NULL) == -1)
 		err(EXIT_FAILURE, "pledge");
 
-	if (verbose < 2) {
+	if (verbose == 0) {
 		printf("\b \b");
 		fflush(stdout);
 	}
 	qsort(array, array_length, sizeof(struct mirror_st *), diff_cmp);
 
-	if (verbose == 3) {
+	if (verbose == 2) {
 		printf("\n\n");
 		for (c = array_length - 1; c >= 0; --c) {
 			array[c]->ftp_file[strlen(array[c]->ftp_file) - tag_len] = '\0';
