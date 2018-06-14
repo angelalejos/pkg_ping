@@ -3,43 +3,48 @@
  *
  * Copyright (c) 2017, Luke N Small, lukensmall@gmail.com
  * All rights reserved.
- *
+ 
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * modification, are permitted provided that the following conditions 
+ * are met:
 
- * Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
+ * Redistributions of source code must retain the above copyright 
+ * notice, this list of conditions and the following disclaimer.
 
- * Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
+ * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the 
+ * documentation and/or other materials provided with the distribution.
 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+ * LIMITED TO, THE  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED 
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+ * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 
 /*
  * Special thanks to Dan Mclaughlin for the ftp to sed idea
  *
+ * "
  * ftp -o - http://www.openbsd.org/ftp.html | \
  * sed -n \
  *  -e 's:</a>$::' \
  * 	-e 's:	<strong>\([^<]*\)<.*:\1:p' \
  * 	-e 's:^\(	[hfr].*\):\1:p'
+ * "
  */
 
 /*
- * indent pkg_ping.c -bap -br -ce -ci4 -cli0 -d0 -di0 -i8 -ip -l79 -nbc -ncdb \
-  -ndj -ei -nfc1 -nlp -npcs -psl -sc -sob
+ * indent pkg_ping.c -bap -br -ce -ci4 -cli0 -d0 -di0 -i8 \
+ * -ip -l79 -nbc -ncdb -ndj -ei -nfc1 -nlp -npcs -psl -sc -sob
  */
 
 #include <err.h>
@@ -50,7 +55,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/event.h>
-#include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -145,8 +149,8 @@ manpage(char *a)
 int
 main(int argc, char *argv[])
 {
-//	if (getuid() == 0)
-//		errx(EXIT_FAILURE, "Don't run as root!");
+	//if (getuid() == 0)
+		//errx(EXIT_FAILURE, "Don't run as root!");
 
 	if (pledge("stdio proc exec", NULL) == -1)
 		err(EXIT_FAILURE, "pledge");
@@ -243,8 +247,9 @@ main(int argc, char *argv[])
 	struct timespec timeout0 = {20, 0};
 	struct timespec timeout;
 
-	timeout.tv_sec = (int) s;
-	timeout.tv_nsec = (int) ((s - (double) timeout.tv_sec) * 1000000000);
+	timeout.tv_sec = (time_t) s;
+	timeout.tv_nsec = (long) ((s - (double) timeout.tv_sec)
+	    * 1000000000);
 
 	kq = kqueue();
 	if (kq == -1)
@@ -286,10 +291,9 @@ main(int argc, char *argv[])
 		errno = n;
 		err(EXIT_FAILURE, "pipe");
 	}
-
 	sed_pid = fork();
 	if (sed_pid == (pid_t) 0) {
-			
+
 		close(sed_to_parent[STDIN_FILENO]);
 
 		if (dup2(ftp_to_sed[STDIN_FILENO], STDIN_FILENO) == -1) {
@@ -304,10 +308,9 @@ main(int argc, char *argv[])
 			errno = n;
 			err(EXIT_FAILURE, "dup2");
 		}
-
 		if (pledge("stdio exec", NULL) == -1)
 			err(EXIT_FAILURE, "pledge");
-			
+
 		execl("/usr/bin/sed", "sed", "-n",
 		    "-e", "s:</a>$::",
 		    "-e", "s:\t<strong>\\([^<]*\\)<.*:\\1:p",
@@ -648,9 +651,11 @@ main(int argc, char *argv[])
 	if (verbose == 2) {
 		printf("\n\n");
 		for (c = array_length - 1; c >= 0; --c) {
-			array[c]->ftp_file[strlen(array[c]->ftp_file) - tag_len] = '\0';
-			printf("%d : %s:\n\techo \"%s\" > /etc/installurl : ", c + 1, array[c]->label,
-			    array[c]->ftp_file);
+			array[c]->ftp_file[strlen(array[c]->ftp_file) - tag_len]
+			    = '\0';
+
+			printf("%d : %s:\n\techo ", c + 1, array[c]->label);
+			printf("\"%s\" > /etc/installurl : ", array[c]->ftp_file);
 
 			if (array[c]->diff < s)
 				printf("%f\n\n", array[c]->diff);
@@ -665,7 +670,8 @@ main(int argc, char *argv[])
 	if (array[0]->diff >= s)
 		errx(EXIT_FAILURE, "No mirrors found within timeout period.");
 
-	printf("as root, type: echo \"%s\" > /etc/installurl\n", array[0]->ftp_file);
+	printf("as root, type: echo ");
+	printf("\"%s\" > /etc/installurl\n", array[0]->ftp_file);
 
 	return 0;
 }
